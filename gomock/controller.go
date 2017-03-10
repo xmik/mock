@@ -58,6 +58,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"runtime/debug"
 	"sync"
 )
 
@@ -126,7 +127,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 
 	expected := ctrl.expectedCalls.FindMatch(receiver, method, args)
 	if expected == nil {
-		ctrl.t.Fatalf("no matching expected call: %T.%v(%v)", receiver, method, args)
+		ctrl.t.Fatalf("no matching expected call: %T.%v(%v)\n%s", receiver, method, args, debug.Stack())
 	}
 
 	// Two things happen here:
