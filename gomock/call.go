@@ -17,6 +17,7 @@ package gomock
 import (
 	"fmt"
 	"reflect"
+	"runtime/debug"
 	"strings"
 )
 
@@ -79,8 +80,8 @@ func (c *Call) Do(f interface{}) *Call {
 func (c *Call) Return(rets ...interface{}) *Call {
 	mt := c.methodType
 	if len(rets) != mt.NumOut() {
-		c.t.Fatalf("wrong number of arguments to Return for %T.%v: got %d, want %d",
-			c.receiver, c.method, len(rets), mt.NumOut())
+		c.t.Fatalf("wrong number of arguments to Return for %T.%v: got %d, want %d\n%s",
+			c.receiver, c.method, len(rets), mt.NumOut(), debug.Stack())
 	}
 	for i, ret := range rets {
 		if got, want := reflect.TypeOf(ret), mt.Out(i); got == want {
@@ -91,8 +92,8 @@ func (c *Call) Return(rets ...interface{}) *Call {
 			case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
 				// ok
 			default:
-				c.t.Fatalf("argument %d to Return for %T.%v is nil, but %v is not nillable",
-					i, c.receiver, c.method, want)
+				c.t.Fatalf("argument %d to Return for %T.%v is nil, but %v is not nillable\n%s",
+					i, c.receiver, c.method, want, debug.Stack())
 			}
 		} else if got.AssignableTo(want) {
 			// Assignable type relation. Make the assignment now so that the generated code
@@ -101,8 +102,8 @@ func (c *Call) Return(rets ...interface{}) *Call {
 			v.Set(reflect.ValueOf(ret))
 			rets[i] = v.Interface()
 		} else {
-			c.t.Fatalf("wrong type of argument %d to Return for %T.%v: %v is not assignable to %v",
-				i, c.receiver, c.method, got, want)
+			c.t.Fatalf("wrong type of argument %d to Return for %T.%v: %v is not assignable to %v\n%s",
+				i, c.receiver, c.method, got, want, debug.Stack())
 		}
 	}
 
@@ -125,7 +126,7 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	// TODO: This will break on variadic methods.
 	// We will need to check those at invocation time.
 	if n < 0 || n >= mt.NumIn() {
-		c.t.Fatalf("SetArg(%d, ...) called for a method with %d args", n, mt.NumIn())
+		c.t.Fatalf("SetArg(%d, ...) called for a method with %d args\n%s", n, mt.NumIn(), debug.Stack())
 	}
 	// Permit setting argument through an interface.
 	// In the interface case, we don't (nay, can't) check the type here.
@@ -134,12 +135,12 @@ func (c *Call) SetArg(n int, value interface{}) *Call {
 	case reflect.Ptr:
 		dt := at.Elem()
 		if vt := reflect.TypeOf(value); !vt.AssignableTo(dt) {
-			c.t.Fatalf("SetArg(%d, ...) argument is a %v, not assignable to %v", n, vt, dt)
+			c.t.Fatalf("SetArg(%d, ...) argument is a %v, not assignable to %v\n%s", n, vt, dt, debug.Stack())
 		}
 	case reflect.Interface:
 		// nothing to do
 	default:
-		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface type %v", n, at)
+		c.t.Fatalf("SetArg(%d, ...) referring to argument of non-pointer non-interface type %v\n%s", n, at, debug.Stack())
 	}
 	c.setArgs[n] = reflect.ValueOf(value)
 	return c
