@@ -59,6 +59,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"sync"
 )
 
@@ -129,7 +130,7 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 	expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
 	if err != nil {
 		origin := callerInfo(2)
-		ctrl.t.Fatalf("no matching expected call: %T.%v(%v) %s\n%s", receiver, method, args, origin, err)
+		ctrl.t.Fatalf("no matching expected call: %T.%v(%v) %s\n%s\n%s", receiver, method, args, origin, err, debug.Stack())
 	}
 
 	// Two things happen here:
